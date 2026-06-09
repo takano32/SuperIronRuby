@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/Src/">
+    <Project Path="Src/SuperIronRuby.Console/SuperIronRuby.Console.csproj" />
+    <Project Path="Src/SuperIronRuby/SuperIronRuby.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/SuperIronRuby.Tests/SuperIronRuby.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Tools/">
+    <Project Path="Tools/AstDump/AstDump.csproj" />
+  </Folder>
+</Solution>
