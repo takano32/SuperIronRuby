@@ -44,6 +44,12 @@ public sealed partial class RubyContext
 
     private readonly Dictionary<string, RubySymbol> _symbols = new();
     private readonly Dictionary<string, object?> _globals = new();
+    private readonly Dictionary<Type, RubyClass> _clrExtensions = new();
+
+    /// <summary>Routes instances of a CLR type to a Ruby class (used by the
+    /// builtin loader's <c>[RubyClass(Extends = ...)]</c>).</summary>
+    public void RegisterClrExtension(Type clrType, RubyClass rubyClass)
+        => _clrExtensions[clrType] = rubyClass;
 
     /// <summary>
     /// Hook into the interpreter for invoking Ruby-defined methods. Installed at
@@ -174,7 +180,10 @@ public sealed partial class RubyContext
             case RubyModule: return ModuleClass;
             case RubyExceptionObject ex: return ex.RubyClass;
             case RubyObject obj: return obj.RubyClass;
-            default: return ObjectClass;
+            default:
+                // Custom CLR types registered via [RubyClass(Extends = ...)].
+                if (_clrExtensions.TryGetValue(value.GetType(), out var ext)) return ext;
+                return ObjectClass;
         }
     }
 
