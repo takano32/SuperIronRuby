@@ -166,7 +166,8 @@ public static class StringOps {
 Exceptions: Ruby-level exceptions are carried by C#
 `RubyRaiseException : Exception { public RubyExceptionObject RubyException; }`.
 Raise helpers: `ctx.RaiseError(ctx.TypeErrorClass, "message")` etc.
-Non-local control flow uses C# exceptions owned by the interpreter:
+Non-local control flow uses C# exceptions defined in `SuperIronRuby.Runtime`
+(so both interpreter and builtins can reference them):
 `BreakUnwind(value, procSourceId)`, `NextUnwind(value)`, `RedoUnwind`,
 `RetryUnwind`, `ReturnUnwind(value, frameId)`, `ThrowUnwind(tag, value)`.
 Builtins must NOT swallow these (catch `RubyRaiseException` only when needed).
@@ -179,7 +180,7 @@ Block semantics builtins must honor:
 
 ```csharp
 namespace SuperIronRuby.Interpreter;
-public sealed class Interpreter {
+public sealed partial class Interpreter {
     public Interpreter(RubyContext context);
     public object? Run(ParseResult unit, RubyScope? scope = null); // top-level execution
 }
@@ -188,6 +189,37 @@ Interpreted method bodies are registered into `RubyMethodInfo.InterpretedDef`;
 `RubyContext.Send` calls back into the interpreter through a delegate installed
 at startup (`ctx.InterpretedInvoker`), so Runtime has no compile-time dependency
 on Interpreter.
+
+The interpreter is a `partial class` split by node family so tasks can be
+worked on independently, one file per area:
+
+```
+Interpreter/Interpreter.cs              driver: Eval(Node) switch over ALL node types,
+                                        RubyScope, helpers; cases call EvalXxx methods
+Interpreter/Interpreter.Literals.cs     literals, statements, local var read/write
+Interpreter/Interpreter.Calls.cs        CallNode + arguments (splat/kwargs/block), and/or/not
+Interpreter/Interpreter.Definitions.cs  def/return/yield/super/alias/undef
+Interpreter/Interpreter.Classes.cs      class/module/sclass/constants/ivar/gvar/cvar/defined?
+Interpreter/Interpreter.ControlFlow.cs  if/while/case-when/begin-rescue/break/next/redo/retry
+Interpreter/Interpreter.Assignments.cs  multiple assignment, op-assigns
+Interpreter/Interpreter.Strings.cs      interpolated strings/symbols/regexp, array/hash/range literals
+Interpreter/Interpreter.Blocks.cs       block/lambda nodes, numbered params, `it`
+Interpreter/Interpreter.Patterns.cs     case/in pattern matching node family
+```
+
+`Interpreter.cs` is created first with every `EvalXxx` method stubbed as
+`private object? EvalXxx(XxxNode n, RubyScope s) => throw NotImplemented(n);`
+in the area files; later tasks replace the stubs in their own file only and
+must not touch other area files.
+
+## Parallel task execution notes
+
+- Tasks run as independent agent sessions. When two .NET-building tasks run
+  concurrently they MUST each work in their own git worktree (same repo) and
+  commit; integration merges branches. Ruby/shell-only tasks (diff snippets)
+  may work directly in the main checkout.
+- Never run two concurrent `dotnet build`s in the same checkout.
+- Each task's "Verify" command must pass before the task is marked complete.
 
 ## Hosting contract
 
