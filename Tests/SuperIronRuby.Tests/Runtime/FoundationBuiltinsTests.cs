@@ -44,7 +44,7 @@ public class FoundationBuiltinsTests
         var ctx = Loaded();
         Assert.Equal("", ((MutableString)ctx.Send(null, "to_s", A())!).Value);
         Assert.Equal("nil", ((MutableString)ctx.Send(null, "inspect", A())!).Value);
-        Assert.Equal(0, ((RubyArray)ctx.Send(null, "to_a", A())!).Count);
+        Assert.Empty((RubyArray)ctx.Send(null, "to_a", A())!);
         Assert.Equal(0L, ctx.Send(null, "to_i", A()));
     }
 

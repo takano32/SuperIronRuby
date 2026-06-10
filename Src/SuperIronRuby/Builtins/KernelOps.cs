@@ -158,7 +158,7 @@ public static class KernelOps
 
     // ---- helpers -----------------------------------------------------------
 
-    internal static string NameOf(object? value) => value switch
+    public static string NameOf(object? value) => value switch
     {
         RubySymbol sym => sym.Name,
         MutableString s => s.Value,
