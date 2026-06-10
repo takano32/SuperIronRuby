@@ -10,6 +10,9 @@ public class RubyModule
     /// <summary>The module's name, or null for an anonymous module.</summary>
     public string? Name;
 
+    /// <summary>Lazily-created singleton (meta) class for this module/class, or null.</summary>
+    public RubyClass? SingletonClass;
+
     private readonly Dictionary<string, RubyMethodInfo> _methods = new();
     private readonly Dictionary<string, object?> _constants = new();
     private readonly Dictionary<string, object?> _classVariables = new();

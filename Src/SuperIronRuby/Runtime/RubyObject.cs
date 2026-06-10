@@ -18,6 +18,9 @@ public class RubyObject
     /// <summary>True once frozen; Ruby mutation of a frozen object raises.</summary>
     public bool IsFrozen { get; set; }
 
+    /// <summary>Lazily-created singleton (eigen) class for this object, or null.</summary>
+    public RubyClass? SingletonClass { get; set; }
+
     public RubyObject(RubyClass rubyClass) => RubyClass = rubyClass;
 
     /// <summary>
