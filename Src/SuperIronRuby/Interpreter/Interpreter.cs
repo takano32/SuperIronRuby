@@ -96,6 +96,22 @@ public sealed partial class Interpreter
             case SuperNode n: return EvalSuper(n, scope);
             case ForwardingSuperNode n: return EvalForwardingSuper(n, scope);
 
+            // -- classes/modules/constants/variables (Interpreter.Classes.cs) --
+            case ClassNode n: return EvalClass(n, scope);
+            case ModuleNode n: return EvalModule(n, scope);
+            case SingletonClassNode n: return EvalSingletonClass(n, scope);
+            case ConstantReadNode n: return EvalConstantRead(n, scope);
+            case ConstantPathNode n: return EvalConstantPath(n, scope);
+            case ConstantWriteNode n: return EvalConstantWrite(n, scope);
+            case ConstantPathWriteNode n: return EvalConstantPathWrite(n, scope);
+            case InstanceVariableReadNode n: return EvalInstanceVariableRead(n, scope);
+            case InstanceVariableWriteNode n: return EvalInstanceVariableWrite(n, scope);
+            case GlobalVariableReadNode n: return EvalGlobalVariableRead(n, scope);
+            case GlobalVariableWriteNode n: return EvalGlobalVariableWrite(n, scope);
+            case ClassVariableReadNode n: return EvalClassVariableRead(n, scope);
+            case ClassVariableWriteNode n: return EvalClassVariableWrite(n, scope);
+            case DefinedNode n: return EvalDefined(n, scope);
+
             default:
                 throw NotImplemented(node);
         }

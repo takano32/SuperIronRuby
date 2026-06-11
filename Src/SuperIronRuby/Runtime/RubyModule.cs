@@ -114,6 +114,28 @@ public class RubyModule
     /// ancestors at a higher layer).</summary>
     public Dictionary<string, object?> ClassVariables => _classVariables;
 
+    // Instance variables on the module/class object itself (e.g. `@x` in a class
+    // body, or class-level state).
+    private Dictionary<string, object?>? _ivars;
+
+    public object? GetIvar(string name)
+        => _ivars is not null && _ivars.TryGetValue(name, out var v) ? v : null;
+
+    public bool TryGetIvar(string name, out object? value)
+    {
+        if (_ivars is not null) return _ivars.TryGetValue(name, out value);
+        value = null;
+        return false;
+    }
+
+    public void SetIvar(string name, object? value)
+    {
+        _ivars ??= new Dictionary<string, object?>();
+        _ivars[name] = value;
+    }
+
+    public IEnumerable<string> IvarNames => _ivars?.Keys ?? Enumerable.Empty<string>();
+
     // ---- include / prepend -------------------------------------------------
 
     /// <summary>Mixes a module in (Ruby include). Newer includes resolve closer
