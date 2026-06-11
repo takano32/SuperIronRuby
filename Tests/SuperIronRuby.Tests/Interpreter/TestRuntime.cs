@@ -52,8 +52,8 @@ internal static class TestRuntime
         Def(ctx.FloatClass, "+", (_, s, a, _) => (double)s! + ToD(a[0]));
         Def(ctx.FloatClass, "to_s", (_, s, _, _) => new MutableString(((double)s!).ToString()), 0, 0);
 
-        // Integer#=== (used by case/when) is just ==.
-        Def(ctx.IntegerClass, "===", (_, s, a, _) => IsInt(a[0]) && ToD(s) == ToD(a[0]));
+        // Integer#=== (used by case/when) — numeric equality across int/float.
+        Def(ctx.IntegerClass, "===", (_, s, a, _) => (IsInt(a[0]) || a[0] is double) && ToD(s) == ToD(a[0]));
         // Module#=== already provided by ModuleOps. Range#=== / each below.
 
         // A tiny Range#each / Integer#times for loop tests, range-as-collection.

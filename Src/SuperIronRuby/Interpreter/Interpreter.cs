@@ -164,6 +164,11 @@ public sealed partial class Interpreter
             case LambdaNode n: return EvalLambda(n, scope);
             case ItLocalVariableReadNode n: return EvalItLocalVariableRead(n, scope);
 
+            // -- pattern matching (Interpreter.Patterns.cs) --
+            case CaseMatchNode n: return EvalCaseMatch(n, scope);
+            case MatchPredicateNode n: return EvalMatchPredicate(n, scope);
+            case MatchRequiredNode n: return EvalMatchRequired(n, scope);
+
             default:
                 throw NotImplemented(node);
         }
