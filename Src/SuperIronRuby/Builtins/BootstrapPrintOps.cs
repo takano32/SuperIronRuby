@@ -11,6 +11,10 @@ namespace SuperIronRuby.Builtins;
 [RubyClass("String")]
 public static class StringPrintOps
 {
+    [RubyMethod("new", Kind = RubyMethodKind.Static)]
+    public static object? New(RubyContext c, object? s, object?[] a, RubyProc? b)
+        => new MutableString(a.Length > 0 && a[0] is MutableString m ? m.Value : "");
+
     [RubyMethod("to_s")]
     [RubyMethod("to_str")]
     public static object? ToS(RubyContext c, object? s, object?[] a, RubyProc? b) => s;
@@ -110,6 +114,21 @@ public static class StringPrintOps
         var arr = new RubyArray();
         foreach (var rune in V(s).EnumerateRunes()) arr.Add(new MutableString(rune.ToString()));
         return arr;
+    }
+
+    [RubyMethod("each_char")]
+    public static object? EachChar(RubyContext c, object? s, object?[] a, RubyProc? blk)
+    {
+        if (blk is not null)
+            foreach (var rune in V(s).EnumerateRunes()) blk.Call(new MutableString(rune.ToString()));
+        return s;
+    }
+
+    [RubyMethod("%")]
+    public static object? Format(RubyContext c, object? s, object?[] a, RubyProc? b)
+    {
+        var fmtArgs = a[0] is RubyArray arr ? arr.ToArray() : new[] { a[0] };
+        return new MutableString(FormatHelper.Sprintf(c, V(s), fmtArgs));
     }
 
     [RubyMethod("include?")]
@@ -242,6 +261,22 @@ public static class ArrayPrintOps
 {
     private static RubyArray A(object? s) => (RubyArray)s!;
 
+    [RubyMethod("new", Kind = RubyMethodKind.Static)]
+    public static object? New(RubyContext c, object? s, object?[] a, RubyProc? blk)
+    {
+        var arr = new RubyArray();
+        if (a.Length >= 1 && a[0] is long n)
+        {
+            var fill = a.Length >= 2 ? a[1] : null;
+            for (long i = 0; i < n; i++) arr.Add(blk is not null ? blk.Call(i) : fill);
+        }
+        else if (a.Length >= 1 && a[0] is RubyArray src)
+        {
+            arr.AddRange(src);
+        }
+        return arr;
+    }
+
     [RubyMethod("inspect")]
     [RubyMethod("to_s")]
     public static object? Inspect(RubyContext c, object? s, object?[] a, RubyProc? b)
@@ -314,9 +349,15 @@ public static class ArrayPrintOps
         return a[1];
     }
 
+    private static void CheckFrozen(RubyContext c, RubyArray arr)
+    {
+        if (arr.IsFrozen) throw c.RaiseFrozenError("Array", c.Inspect(arr));
+    }
+
     [RubyMethod("<<")]
     public static object? Append(RubyContext c, object? s, object?[] a, RubyProc? b)
     {
+        CheckFrozen(c, A(s));
         A(s).Add(a[0]);
         return s;
     }
@@ -325,6 +366,7 @@ public static class ArrayPrintOps
     [RubyMethod("append")]
     public static object? Push(RubyContext c, object? s, object?[] a, RubyProc? b)
     {
+        CheckFrozen(c, A(s));
         foreach (var x in a) A(s).Add(x);
         return s;
     }
@@ -511,6 +553,10 @@ public static class HashPrintOps
     }
 
     private static RubyHash H(object? s) => (RubyHash)s!;
+
+    [RubyMethod("new", Kind = RubyMethodKind.Static)]
+    public static object? New(RubyContext c, object? s, object?[] a, RubyProc? blk)
+        => new RubyHash { DefaultValue = a.Length > 0 ? a[0] : null, DefaultProc = blk };
 
     [RubyMethod("[]")]
     public static object? Index(RubyContext c, object? s, object?[] a, RubyProc? b)

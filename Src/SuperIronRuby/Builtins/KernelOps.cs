@@ -20,6 +20,8 @@ public static class KernelOps
         {
             null or bool or long or double or System.Numerics.BigInteger or RubySymbol => true,
             MutableString s => s.IsFrozen,
+            RubyArray a => a.IsFrozen,
+            RubyHash h => h.IsFrozen,
             RubyObject o => o.IsFrozen,
             _ => false,
         };
@@ -30,6 +32,8 @@ public static class KernelOps
         switch (self)
         {
             case MutableString s: s.Freeze(); break;
+            case RubyArray a: a.IsFrozen = true; break;
+            case RubyHash h: h.IsFrozen = true; break;
             case RubyObject o: o.IsFrozen = true; break;
         }
         return self;

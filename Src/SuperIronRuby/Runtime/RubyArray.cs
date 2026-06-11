@@ -8,6 +8,9 @@ namespace SuperIronRuby.Runtime;
 /// </summary>
 public sealed class RubyArray : List<object?>
 {
+    /// <summary>True once frozen; mutating builtins must check this.</summary>
+    public bool IsFrozen { get; set; }
+
     /// <summary>Creates an empty array.</summary>
     public RubyArray() { }
 
