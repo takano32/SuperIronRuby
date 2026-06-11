@@ -13,6 +13,10 @@ public class RubyModule
     /// <summary>Lazily-created singleton (meta) class for this module/class, or null.</summary>
     public RubyClass? SingletonClass;
 
+    /// <summary>The default visibility applied to methods defined in this module's
+    /// body (changed by a no-arg <c>private</c>/<c>protected</c>/<c>public</c>).</summary>
+    public RubyMethodVisibility DefaultVisibility = RubyMethodVisibility.Public;
+
     private readonly Dictionary<string, RubyMethodInfo> _methods = new();
     private readonly Dictionary<string, object?> _constants = new();
     private readonly Dictionary<string, object?> _classVariables = new();

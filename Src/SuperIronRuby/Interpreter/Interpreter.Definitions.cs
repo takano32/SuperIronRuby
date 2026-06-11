@@ -35,10 +35,14 @@ public sealed partial class Interpreter
             target = _context.SingletonClassOf(receiver);
         }
 
+        // Methods defined in a class/module body honor its default visibility
+        // (set by a no-arg private/protected); singleton/explicit-receiver defs
+        // are always public.
+        var visibility = node.Receiver is null ? target.DefaultVisibility : RubyMethodVisibility.Public;
         var method = new RubyMethodInfo(node.Name, target)
         {
             InterpretedDef = new InterpretedMethod(node, _unit!),
-            Visibility = RubyMethodVisibility.Public,
+            Visibility = visibility,
         };
         target.DefineMethod(node.Name, method);
         EnsureInvokerInstalled();
