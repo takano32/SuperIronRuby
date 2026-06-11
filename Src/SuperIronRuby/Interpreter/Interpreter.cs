@@ -137,6 +137,29 @@ public sealed partial class Interpreter
             case RegularExpressionNode n: return EvalRegexp(n, scope);
             case InterpolatedRegularExpressionNode n: return EvalInterpolatedRegexp(n, scope);
 
+            // -- assignments (Interpreter.Assignments.cs) --
+            case MultiWriteNode n: return EvalMultiWrite(n, scope);
+            case LocalVariableOrWriteNode n: return EvalLocalOrWrite(n, scope);
+            case LocalVariableAndWriteNode n: return EvalLocalAndWrite(n, scope);
+            case LocalVariableOperatorWriteNode n: return EvalLocalOpWrite(n, scope);
+            case InstanceVariableOrWriteNode n: return EvalIvarOrWrite(n, scope);
+            case InstanceVariableAndWriteNode n: return EvalIvarAndWrite(n, scope);
+            case InstanceVariableOperatorWriteNode n: return EvalIvarOpWrite(n, scope);
+            case GlobalVariableOrWriteNode n: return EvalGvarOrWrite(n, scope);
+            case GlobalVariableAndWriteNode n: return EvalGvarAndWrite(n, scope);
+            case GlobalVariableOperatorWriteNode n: return EvalGvarOpWrite(n, scope);
+            case ClassVariableOrWriteNode n: return EvalCvarOrWrite(n, scope);
+            case ClassVariableAndWriteNode n: return EvalCvarAndWrite(n, scope);
+            case ClassVariableOperatorWriteNode n: return EvalCvarOpWrite(n, scope);
+            case ConstantOrWriteNode n: return EvalConstOrWrite(n, scope);
+            case ConstantOperatorWriteNode n: return EvalConstOpWrite(n, scope);
+            case CallOrWriteNode n: return EvalCallOrWrite(n, scope);
+            case CallAndWriteNode n: return EvalCallAndWrite(n, scope);
+            case CallOperatorWriteNode n: return EvalCallOpWrite(n, scope);
+            case IndexOrWriteNode n: return EvalIndexOrWrite(n, scope);
+            case IndexAndWriteNode n: return EvalIndexAndWrite(n, scope);
+            case IndexOperatorWriteNode n: return EvalIndexOpWrite(n, scope);
+
             default:
                 throw NotImplemented(node);
         }
