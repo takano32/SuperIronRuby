@@ -127,6 +127,16 @@ public sealed partial class Interpreter
             case ForNode n: return EvalFor(n, scope);
             case RetryNode n: return EvalRetry(n, scope);
 
+            // -- composite literals (Interpreter.Strings.cs) --
+            case InterpolatedStringNode n: return EvalInterpolatedString(n, scope);
+            case InterpolatedSymbolNode n: return EvalInterpolatedSymbol(n, scope);
+            case EmbeddedStatementsNode n: return EvalEmbeddedStatements(n, scope);
+            case ArrayNode n: return EvalArray(n, scope);
+            case HashNode n: return EvalHash(n, scope);
+            case RangeNode n: return EvalRange(n, scope);
+            case RegularExpressionNode n: return EvalRegexp(n, scope);
+            case InterpolatedRegularExpressionNode n: return EvalInterpolatedRegexp(n, scope);
+
             default:
                 throw NotImplemented(node);
         }
