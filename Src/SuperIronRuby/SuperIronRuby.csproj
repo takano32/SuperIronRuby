@@ -16,4 +16,8 @@
     <EmbeddedResource Include="Lib/**/*.rb" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="SuperIronRuby.Tests" />
+  </ItemGroup>
+
 </Project>
