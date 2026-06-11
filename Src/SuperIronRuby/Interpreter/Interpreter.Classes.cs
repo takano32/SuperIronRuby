@@ -110,6 +110,9 @@ public sealed partial class Interpreter
         if (target.TryGetConstant(node.Name, out var v)) return v;
         if (_context.ObjectClass.TryGetConstant(node.Name, out var ov)) return ov;
 
+        // CLR interop: a top-level namespace root like `System`.
+        if (_context.GetClrNamespaceRoot(node.Name) is { } clrRoot) return clrRoot;
+
         throw _context.RaiseError(_context.NameErrorClass, $"uninitialized constant {node.Name}");
     }
 
@@ -124,6 +127,10 @@ public sealed partial class Interpreter
 
         if (Eval(node.Parent, scope) is not RubyModule parent)
             throw _context.RaiseTypeError("not a class/module");
+
+        // CLR namespace navigation: System::Text::StringBuilder, etc.
+        if (parent is ClrNamespaceModule clrNs) return clrNs.Resolve(node.Name ?? "");
+
         if (parent.TryGetConstant(node.Name ?? "", out var v)) return v;
         throw _context.RaiseError(_context.NameErrorClass,
             $"uninitialized constant {parent.Name}::{node.Name}");
