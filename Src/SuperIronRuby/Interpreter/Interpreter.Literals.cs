@@ -42,10 +42,15 @@ public sealed partial class Interpreter
 }
 
 // Small node helpers kept close to their use.
-internal static class StringNodeExtensions
+internal static class NodeFlagExtensions
 {
-    // Prism sets the frozen flag on string literals via StringFlags. The
-    // generated StringNode exposes typed flags; bit for FROZEN is checked here.
+    // Prism sets the frozen flag on string literals via StringFlags.
     public static bool IsFrozenStringLiteral(this StringNode node)
         => (node.Flags & (int)StringFlags.Frozen) != 0;
+
+    public static bool IsSafeNavigation(this CallNode node)
+        => (node.Flags & (int)CallNodeFlags.SafeNavigation) != 0;
+
+    public static bool IsAttributeWrite(this CallNode node)
+        => (node.Flags & (int)CallNodeFlags.AttributeWrite) != 0;
 }

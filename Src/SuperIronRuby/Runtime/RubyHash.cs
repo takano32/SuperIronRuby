@@ -12,7 +12,7 @@ namespace SuperIronRuby.Runtime;
 /// in a doubly-linked insertion-order list. Reassigning an existing key keeps its
 /// original position (Ruby behavior). Performance tuning is left for later.
 /// </remarks>
-public sealed class RubyHash
+public class RubyHash
 {
     /// <summary>One key/value entry, also a node in the insertion-order list.</summary>
     public sealed class Entry

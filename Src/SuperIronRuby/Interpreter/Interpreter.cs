@@ -76,6 +76,11 @@ public sealed partial class Interpreter
             case LocalVariableReadNode n: return EvalLocalRead(n, scope);
             case LocalVariableWriteNode n: return EvalLocalWrite(n, scope);
 
+            // -- calls & boolean operators (Interpreter.Calls.cs) --
+            case CallNode n: return EvalCall(n, scope);
+            case AndNode n: return EvalAnd(n, scope);
+            case OrNode n: return EvalOr(n, scope);
+
             default:
                 throw NotImplemented(node);
         }
