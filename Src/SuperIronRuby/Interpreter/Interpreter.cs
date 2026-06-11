@@ -30,8 +30,16 @@ public sealed partial class Interpreter
     public object? Run(ParseResult unit, RubyScope? scope = null)
     {
         _unit = unit;
-        scope ??= CreateTopLevelScope();
-        return Eval(unit.Root, scope);
+        var topScope = scope ?? CreateTopLevelScope();
+        try
+        {
+            return Eval(unit.Root, topScope);
+        }
+        catch (ReturnUnwind ret) when (ret.FrameId == topScope.FrameId)
+        {
+            // top-level `return` ends the script with the returned value
+            return ret.Value;
+        }
     }
 
     /// <summary>Creates the top-level scope (self = the main object, constants and
@@ -80,6 +88,13 @@ public sealed partial class Interpreter
             case CallNode n: return EvalCall(n, scope);
             case AndNode n: return EvalAnd(n, scope);
             case OrNode n: return EvalOr(n, scope);
+
+            // -- definitions (Interpreter.Definitions.cs) --
+            case DefNode n: return EvalDef(n, scope);
+            case ReturnNode n: return EvalReturn(n, scope);
+            case YieldNode n: return EvalYield(n, scope);
+            case SuperNode n: return EvalSuper(n, scope);
+            case ForwardingSuperNode n: return EvalForwardingSuper(n, scope);
 
             default:
                 throw NotImplemented(node);
