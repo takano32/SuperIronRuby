@@ -43,6 +43,10 @@ public sealed class RubyScope
     /// <summary>Lexical module nesting (innermost first) for constant lookup.</summary>
     public List<RubyModule> LexicalModules { get; }
 
+    /// <summary>The id that <c>break</c>/<c>next</c>/<c>redo</c> target: a loop's
+    /// unique id, or a block's source id. 0 = no enclosing breakable construct.</summary>
+    public long CurrentBreakId { get; set; }
+
     private static long _frameCounter;
 
     public RubyScope(ScopeKind kind, RubyScope? parent)
@@ -57,6 +61,7 @@ public sealed class RubyScope
             Block = parent.Block;
             CurrentMethod = parent.CurrentMethod;
             LexicalModules = parent.LexicalModules;
+            CurrentBreakId = parent.CurrentBreakId;
         }
         else
         {

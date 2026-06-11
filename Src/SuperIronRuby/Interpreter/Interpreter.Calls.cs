@@ -18,7 +18,24 @@ public sealed partial class Interpreter
         var (args, block) = EvalArguments(node, scope);
 
         var flags = implicitSelf ? RubyCallFlags.ImplicitSelf : RubyCallFlags.None;
-        var result = _context.Send(receiver, node.Name, args, block, flags, scope.Self);
+
+        object? result;
+        // A break out of a block literal unwinds to the call that received it.
+        if (node.Block is BlockNode blockLit)
+        {
+            try
+            {
+                result = _context.Send(receiver, node.Name, args, block, flags, scope.Self);
+            }
+            catch (BreakUnwind br) when (br.SourceId == blockLit.NodeId)
+            {
+                return br.Value;
+            }
+        }
+        else
+        {
+            result = _context.Send(receiver, node.Name, args, block, flags, scope.Self);
+        }
 
         // Attribute writes (`recv.foo = v`) evaluate to the assigned value, not
         // the setter's return.
@@ -138,9 +155,20 @@ public sealed partial class Interpreter
     {
         return new RubyProc(args =>
         {
-            var blockScope = new RubyScope(ScopeKind.Block, outer);
+            var blockScope = new RubyScope(ScopeKind.Block, outer)
+            {
+                CurrentBreakId = node.NodeId,   // break in this block targets the call
+            };
             BindBlockParametersMinimal(node, args, blockScope);
-            return Eval(node.Body, blockScope);
+            while (true)
+            {
+                try
+                {
+                    return Eval(node.Body, blockScope);
+                }
+                catch (NextUnwind n) { return n.Value; }   // next -> this iteration's value
+                catch (RedoUnwind) { continue; }            // redo -> re-run the body
+            }
         })
         {
             SourceId = node.NodeId,

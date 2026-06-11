@@ -112,6 +112,21 @@ public sealed partial class Interpreter
             case ClassVariableWriteNode n: return EvalClassVariableWrite(n, scope);
             case DefinedNode n: return EvalDefined(n, scope);
 
+            // -- control flow (Interpreter.ControlFlow.cs) --
+            case IfNode n: return EvalIf(n, scope);
+            case UnlessNode n: return EvalUnless(n, scope);
+            case ElseNode n: return EvalElse(n, scope);
+            case WhileNode n: return EvalWhile(n, scope);
+            case UntilNode n: return EvalUntil(n, scope);
+            case CaseNode n: return EvalCase(n, scope);
+            case BreakNode n: return EvalBreak(n, scope);
+            case NextNode n: return EvalNext(n, scope);
+            case RedoNode n: return EvalRedo(n, scope);
+            case BeginNode n: return EvalBegin(n, scope);
+            case RescueModifierNode n: return EvalRescueModifier(n, scope);
+            case ForNode n: return EvalFor(n, scope);
+            case RetryNode n: return EvalRetry(n, scope);
+
             default:
                 throw NotImplemented(node);
         }

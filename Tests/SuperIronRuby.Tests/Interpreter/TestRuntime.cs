@@ -52,6 +52,53 @@ internal static class TestRuntime
         Def(ctx.FloatClass, "+", (_, s, a, _) => (double)s! + ToD(a[0]));
         Def(ctx.FloatClass, "to_s", (_, s, _, _) => new MutableString(((double)s!).ToString()), 0, 0);
 
+        // Integer#=== (used by case/when) is just ==.
+        Def(ctx.IntegerClass, "===", (_, s, a, _) => IsInt(a[0]) && ToD(s) == ToD(a[0]));
+        // Module#=== already provided by ModuleOps. Range#=== / each below.
+
+        // A tiny Range#each / Integer#times for loop tests, range-as-collection.
+        Def(ctx.RangeClass, "each", (c, s, _, blk) =>
+        {
+            var r = (RubyRange)s!;
+            long lo = Convert.ToInt64(r.Begin), hi = Convert.ToInt64(r.End);
+            long end = r.ExcludeEnd ? hi - 1 : hi;
+            for (long i = lo; i <= end; i++) blk?.Call(i);
+            return s;
+        }, 0, 0);
+        Def(ctx.IntegerClass, "times", (c, s, _, blk) =>
+        {
+            long n = Convert.ToInt64(s);
+            for (long i = 0; i < n; i++) blk?.Call(i);
+            return s;
+        }, 0, 0);
+
+        // Minimal Kernel#raise (full version is task B1/B13).
+        ctx.KernelModule.DefineMethod("raise", RubyMethodInfo.FromBuiltin("raise", ctx.KernelModule,
+            (c, self, a, _) =>
+            {
+                if (a.Length == 0)
+                {
+                    var cur = c.CurrentException ?? c.CreateException(c.RuntimeErrorClass, "unhandled exception");
+                    throw new RubyRaiseException(cur);
+                }
+                switch (a[0])
+                {
+                    case MutableString msg:
+                        throw c.RaiseError(c.RuntimeErrorClass, msg.Value);
+                    case RubyClass cls:
+                        var m = a.Length > 1 && a[1] is MutableString m2 ? m2.Value : cls.Name ?? "";
+                        throw c.RaiseError(cls, m);
+                    case RubyExceptionObject ex:
+                        throw new RubyRaiseException(ex);
+                    default:
+                        throw c.RaiseRuntimeError("exception class/object expected");
+                }
+            }, arityMin: 0, arityMax: -1));
+
+        // Minimal Exception#message (full version is task B13).
+        ctx.ExceptionClass.DefineMethod("message", RubyMethodInfo.FromBuiltin("message", ctx.ExceptionClass,
+            (_, self, _, _) => new MutableString(((RubyExceptionObject)self!).Message), arityMin: 0, arityMax: 0));
+
         // String#+ and #length for interpolation/call tests.
         Def(ctx.StringClass, "+", (_, s, a, _) =>
             new MutableString(((MutableString)s!).Value + ((MutableString)a[0]!).Value));
