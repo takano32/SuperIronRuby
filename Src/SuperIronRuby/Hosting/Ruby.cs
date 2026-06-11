@@ -107,7 +107,58 @@ public sealed class ScriptEngine
         _context.ObjectClass.SetConstant("ARGV", new RubyArray());
         _context.SetGlobal("$0", new MutableString("(sir)"));
         _context.SetGlobal("$PROGRAM_NAME", new MutableString("(sir)"));
+        SetupEnv();
+        SetupStdio();
     }
+
+    // ENV: a singleton object backed by the process environment.
+    private void SetupEnv()
+    {
+        var envClass = _context.DefineClass("ENVClass", _context.ObjectClass);
+        var env = new RubyObject(envClass);
+        var singleton = _context.SingletonClassOf(env);
+
+        singleton.DefineMethod("[]", RubyMethodInfo.FromBuiltin("[]", singleton, (c, _, a, _) =>
+        {
+            var v = Environment.GetEnvironmentVariable(Str(a[0]));
+            return v is null ? null : new MutableString(v);
+        }));
+        singleton.DefineMethod("[]=", RubyMethodInfo.FromBuiltin("[]=", singleton, (c, _, a, _) =>
+        {
+            Environment.SetEnvironmentVariable(Str(a[0]), a[1] is null ? null : Str(a[1]));
+            return a[1];
+        }));
+        singleton.DefineMethod("fetch", RubyMethodInfo.FromBuiltin("fetch", singleton, (c, _, a, _) =>
+        {
+            var v = Environment.GetEnvironmentVariable(Str(a[0]));
+            if (v is not null) return new MutableString(v);
+            if (a.Length > 1) return a[1];
+            throw c.RaiseError(c.KeyErrorClass, $"key not found: \"{Str(a[0])}\"");
+        }));
+        singleton.DefineMethod("key?", RubyMethodInfo.FromBuiltin("key?", singleton,
+            (c, _, a, _) => Environment.GetEnvironmentVariable(Str(a[0])) is not null));
+        singleton.DefineMethod("to_h", RubyMethodInfo.FromBuiltin("to_h", singleton, (c, _, _, _) =>
+        {
+            var h = new RubyHash();
+            foreach (System.Collections.DictionaryEntry e in Environment.GetEnvironmentVariables())
+                h.Store(new MutableString(e.Key.ToString()!), new MutableString(e.Value?.ToString() ?? ""));
+            return h;
+        }));
+
+        _context.ObjectClass.SetConstant("ENV", env);
+    }
+
+    private void SetupStdio()
+    {
+        // Minimal $stdout/$stderr globals point at the context writers indirectly
+        // (Kernel#puts/print/p already write to ctx.Stdout). Expose simple IO-like
+        // objects so $stdout.puts works too.
+        _context.SetGlobal("$stdout", null);
+        _context.SetGlobal("$stderr", null);
+        _context.SetGlobal("$stdin", null);
+    }
+
+    private static string Str(object? o) => o is MutableString m ? m.Value : o?.ToString() ?? "";
 
     // Evaluates the embedded Lib/core/*.rb files (deterministic name order) so
     // the Ruby-authored parts of the core library (e.g. Enumerable) are available.
