@@ -132,6 +132,46 @@ public static class IntegerOps
     [RubyMethod("to_f")]
     public static object? ToF(RubyContext c, object? s, object?[] a, RubyProc? b) => Dbl(s);
 
+    [RubyMethod("gcd")]
+    public static object? Gcd(RubyContext c, object? s, object?[] a, RubyProc? b)
+        => Norm(BigInteger.GreatestCommonDivisor(Big(s), Big(a[0])));
+
+    [RubyMethod("lcm")]
+    public static object? Lcm(RubyContext c, object? s, object?[] a, RubyProc? b)
+    {
+        var x = BigInteger.Abs(Big(s));
+        var y = BigInteger.Abs(Big(a[0]));
+        if (x.IsZero || y.IsZero) return 0L;
+        return Norm(x / BigInteger.GreatestCommonDivisor(x, y) * y);
+    }
+
+    [RubyMethod("divmod")]
+    public static object? DivMod(RubyContext c, object? s, object?[] a, RubyProc? b)
+        => new RubyArray { Div(c, s, a, b), Mod(c, s, a, b) };
+
+    [RubyMethod("clamp")]
+    public static object? Clamp(RubyContext c, object? s, object?[] a, RubyProc? b)
+    {
+        if (Compare(s, a[0]) < 0) return a[0];
+        if (Compare(s, a[1]) > 0) return a[1];
+        return s;
+    }
+
+    [RubyMethod("between?")]
+    public static object? Between(RubyContext c, object? s, object?[] a, RubyProc? b)
+        => Compare(s, a[0]) >= 0 && Compare(s, a[1]) <= 0;
+
+    [RubyMethod("integer?")]
+    public static object? IsInteger(RubyContext c, object? s, object?[] a, RubyProc? b) => true;
+
+    [RubyMethod("downto")]
+    public static object? Downto(RubyContext c, object? s, object?[] a, RubyProc? blk)
+    {
+        if (blk is null) throw c.RaiseNotImplementedError("Integer#downto without a block not yet supported");
+        for (var i = Big(s); i >= Big(a[0]); i--) blk.Call(Norm(i));
+        return s;
+    }
+
     [RubyMethod("times")]
     public static object? Times(RubyContext c, object? s, object?[] a, RubyProc? blk)
     {

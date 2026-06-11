@@ -75,6 +75,28 @@ public sealed partial class Interpreter
         }
     }
 
+    private object? EvalAlias(AliasMethodNode node, RubyScope scope)
+    {
+        var target = scope.DefinitionTarget ?? _context.ObjectClass;
+        target.AliasMethod(SymbolName(node.NewName, scope), SymbolName(node.OldName, scope));
+        return null;
+    }
+
+    private object? EvalUndef(UndefNode node, RubyScope scope)
+    {
+        var target = scope.DefinitionTarget ?? _context.ObjectClass;
+        foreach (var n in node.Names) target.RemoveMethod(SymbolName(n, scope));
+        return null;
+    }
+
+    // The name nodes in alias/undef are usually SymbolNodes; fall back to eval.
+    private string SymbolName(Node node, RubyScope scope)
+        => node switch
+        {
+            SymbolNode s => s.Unescaped,
+            _ => Eval(node, scope) is RubySymbol sym ? sym.Name : "",
+        };
+
     private object? EvalReturn(ReturnNode node, RubyScope scope)
     {
         object? value = ReturnValue(node.Arguments, scope);

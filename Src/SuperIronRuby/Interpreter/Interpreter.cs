@@ -95,6 +95,8 @@ public sealed partial class Interpreter
             case YieldNode n: return EvalYield(n, scope);
             case SuperNode n: return EvalSuper(n, scope);
             case ForwardingSuperNode n: return EvalForwardingSuper(n, scope);
+            case AliasMethodNode n: return EvalAlias(n, scope);
+            case UndefNode n: return EvalUndef(n, scope);
 
             // -- classes/modules/constants/variables (Interpreter.Classes.cs) --
             case ClassNode n: return EvalClass(n, scope);
