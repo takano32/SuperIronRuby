@@ -9,6 +9,11 @@ public sealed partial class Interpreter
     private object? EvalCall(CallNode node, RubyScope scope)
     {
         bool implicitSelf = node.Receiver is null;
+
+        // block_given? needs the enclosing method's block, which a builtin can't
+        // see, so it's resolved here as an implicit-self call.
+        if (implicitSelf && node.Name == "block_given?" && node.Arguments is null)
+            return FindMethodBlock(scope) is not null;
         object? receiver = implicitSelf ? scope.Self : Eval(node.Receiver, scope);
 
         // Safe navigation: `recv&.foo` short-circuits to nil on a nil receiver.
@@ -144,48 +149,6 @@ public sealed partial class Interpreter
                 return new RubyProc(args => _context.Send(args[0], sym.Name, args.Skip(1).ToArray()));
             default:
                 return _context.Send(value, "to_proc", System.Array.Empty<object?>()) as RubyProc;
-        }
-    }
-
-    // Block literals (`foo { ... }` / `foo do ... end`) become RubyProcs that
-    // close over `scope`. Full semantics (numbered params, `it`, break/next)
-    // arrive in task I8; this minimal version supports a single block parameter
-    // and body evaluation so calls-with-blocks work end to end.
-    private RubyProc MakeBlockProc(BlockNode node, RubyScope outer)
-    {
-        return new RubyProc(args =>
-        {
-            var blockScope = new RubyScope(ScopeKind.Block, outer)
-            {
-                CurrentBreakId = node.NodeId,   // break in this block targets the call
-            };
-            BindBlockParametersMinimal(node, args, blockScope);
-            while (true)
-            {
-                try
-                {
-                    return Eval(node.Body, blockScope);
-                }
-                catch (NextUnwind n) { return n.Value; }   // next -> this iteration's value
-                catch (RedoUnwind) { continue; }            // redo -> re-run the body
-            }
-        })
-        {
-            SourceId = node.NodeId,
-        };
-    }
-
-    // Minimal parameter binding for block literals (I8 generalizes this).
-    private void BindBlockParametersMinimal(BlockNode node, object?[] args, RubyScope scope)
-    {
-        if (node.Parameters is BlockParametersNode { Parameters: ParametersNode pnode })
-        {
-            var requireds = pnode.Requireds;
-            for (int i = 0; i < requireds.Length; i++)
-            {
-                if (requireds[i] is RequiredParameterNode req)
-                    scope.DeclareLocal(req.Name, i < args.Length ? args[i] : null);
-            }
         }
     }
 

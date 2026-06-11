@@ -160,6 +160,10 @@ public sealed partial class Interpreter
             case IndexAndWriteNode n: return EvalIndexAndWrite(n, scope);
             case IndexOperatorWriteNode n: return EvalIndexOpWrite(n, scope);
 
+            // -- blocks/lambdas (Interpreter.Blocks.cs) --
+            case LambdaNode n: return EvalLambda(n, scope);
+            case ItLocalVariableReadNode n: return EvalItLocalVariableRead(n, scope);
+
             default:
                 throw NotImplemented(node);
         }
