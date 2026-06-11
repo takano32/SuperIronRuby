@@ -540,8 +540,9 @@ public static class HashPrintOps
     [RubyMethod("each_pair")]
     public static object? Each(RubyContext c, object? s, object?[] a, RubyProc? blk)
     {
+        // Yields a single [key, value] pair; a |k, v| block auto-splats it.
         if (blk is not null)
-            foreach (var e in H(s).Entries().ToArray()) blk.Call(e.Key, e.Value);
+            foreach (var e in H(s).Entries().ToArray()) blk.Call(new RubyArray { e.Key, e.Value });
         return s;
     }
 
@@ -625,6 +626,59 @@ public static class HashPrintOps
     [RubyMethod("delete")]
     public static object? Delete(RubyContext c, object? s, object?[] a, RubyProc? b)
         => H(s).Remove(a[0], out var v) ? v : null;
+
+    [RubyMethod("select")]
+    [RubyMethod("filter")]
+    public static object? Select(RubyContext c, object? s, object?[] a, RubyProc? blk)
+    {
+        var res = new RubyHash();
+        if (blk is not null)
+            foreach (var e in H(s).Entries())
+                if (RubyContext.Truthy(blk.Call(e.Key, e.Value))) res.Store(e.Key, e.Value);
+        return res;
+    }
+
+    [RubyMethod("reject")]
+    public static object? Reject(RubyContext c, object? s, object?[] a, RubyProc? blk)
+    {
+        var res = new RubyHash();
+        if (blk is not null)
+            foreach (var e in H(s).Entries())
+                if (!RubyContext.Truthy(blk.Call(e.Key, e.Value))) res.Store(e.Key, e.Value);
+        return res;
+    }
+
+    [RubyMethod("transform_values")]
+    public static object? TransformValues(RubyContext c, object? s, object?[] a, RubyProc? blk)
+    {
+        var res = new RubyHash();
+        if (blk is not null) foreach (var e in H(s).Entries()) res.Store(e.Key, blk.Call(e.Value));
+        return res;
+    }
+
+    [RubyMethod("transform_keys")]
+    public static object? TransformKeys(RubyContext c, object? s, object?[] a, RubyProc? blk)
+    {
+        var res = new RubyHash();
+        if (blk is not null) foreach (var e in H(s).Entries()) res.Store(blk.Call(e.Key), e.Value);
+        return res;
+    }
+
+    [RubyMethod("map")]
+    public static object? Map(RubyContext c, object? s, object?[] a, RubyProc? blk)
+    {
+        var res = new RubyArray();
+        if (blk is not null) foreach (var e in H(s).Entries()) res.Add(blk.Call(e.Key, e.Value));
+        return res;
+    }
+
+    [RubyMethod("any?")]
+    public static object? Any(RubyContext c, object? s, object?[] a, RubyProc? blk)
+    {
+        foreach (var e in H(s).Entries())
+            if (blk is null || RubyContext.Truthy(blk.Call(e.Key, e.Value))) return true;
+        return false;
+    }
 
     [RubyMethod("to_h")]
     public static object? ToH(RubyContext c, object? s, object?[] a, RubyProc? b) => s;
